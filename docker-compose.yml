@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  pihole:
+    container_name: pihole
+    image: pihole/pihole:latest
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "80:80/tcp"
+    environment:
+      - TZ=Europe/Berlin
+      - WEBPASSWORD=mein_sicheres_passwort
+    volumes:
+      - './pihole/etc-pihole:/etc/pihole'
+      - './pihole/etc-dnsmasq.d:/etc/dnsmasq.d'
+    restart: unless-stopped
+
+  wireguard:
+    container_name: wireguard
+    image: lscr.io/linuxserver/wireguard:latest
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Berlin
+      - SERVERURL=meine.dyndns.adresse # Öffentliche IP oder DynDNS eintragen
+      - SERVERPORT=51820
+      - PEERS=1
+      - PEERDNS=192.168.178.x # Hier die lokale IP des Servers eintragen, damit das VPN den Pi-hole nutzt
+    volumes:
+      - './wireguard/config:/config'
+      - '/lib/modules:/lib/modules'
+    ports:
+      - "51820:51820/udp"
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
